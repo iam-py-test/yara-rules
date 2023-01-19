@@ -14,8 +14,8 @@ rule AppLaunch
 		yarahub_rule_sharing_tlp = "TLP:WHITE"
 		yarahub_reference_md5 = "7dbfe0186e52ef2da13079f6d5b800d7"
 	strings:
-		$filelocation = "C:\\Windows\\Microsoft.NET\\Framewor"
-		$applaunch = "\\AppLaunch.exe" nocase
+		$filelocation = "C:\\Windows\\Microsoft.NET\\Framewor" ascii wide
+		$applaunch = "\\AppLaunch.exe" nocase ascii wide
 	condition:
 		$filelocation and $applaunch
 }

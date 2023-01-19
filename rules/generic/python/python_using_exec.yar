@@ -7,7 +7,9 @@ rule python_exec
 		false_positives = "Programs using exec for non-malware purposes, programs in other languages"
 	strings:
 		$exec_function = "exec("
+		// don't match PE files 
 		$DOS_program = "!This program cannot be run in DOS mode."
+		$hex_mz = { 4D 5A }
 	condition:
-		$exec_function and not $DOS_program
+		$exec_function and not ($DOS_program or $hex_mz at 0)
 }
