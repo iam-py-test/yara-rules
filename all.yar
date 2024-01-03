@@ -179,12 +179,15 @@ rule Disable_Defender
 		$defender_task_4 = "schtasks /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Scheduled Scan\"" ascii wide
 		$defender_task_5 = "schtasks /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Verification\"" ascii wide nocase
 		$defender_wmic = "WMIC /Namespace:\\\\root\\Microsoft\\Windows\\Defender" ascii wide nocase
+		$defender_powershell_networkprotection = "Set-MpPreference -EnableNetworkProtection " ascii wide nocase
+		$defender_restore_default = "\\MpCmdRun.exe -RestoreDefaults" ascii wide
 		
 		// Windows firewall
 		$firewall_netsh_disable = "netsh advfirewall set allprofiles state off" ascii wide
 		$firewall_reg_key = "\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\" ascii wide
 		$firewall_sharedaccess_reg_key = "\\SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\" ascii wide
 		$firewall_allow = "netsh firewall add allowedprogram" nocase ascii wide
+		$firewall_changelogsize = "netsh advfirewall set currentprofile logging maxfilesize" ascii wide nocase
 		
 		// Microsoft Windows Malicious Software Removal Tool
 		$MRT_reg_key = "\\SOFTWARE\\Policies\\Microsoft\\MRT" ascii wide
@@ -197,12 +200,17 @@ rule Disable_Defender
 		// Internet Explorer
 		$ie_phishing_filter = "\\SOFTWARE\\Microsoft\\Internet Explorer\\PhishingFilter" ascii wide
 		
-		// key, value pairs
+		// key, value pairs - these may have false positives
 		$k1 = "\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" ascii wide
 		$k2 = "\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" ascii wide
+		$k3 = "\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" ascii wide
+		$k4 = "\\SOFTWARE\\MICROSOFT\\SECURITY CENTER" nocase ascii wide
 		
 		$v1 = "HideSCAHealth" ascii wide
-		$v2 = "SecurityHealth" ascii
+		$v2 = "SecurityHealth" ascii wide
+		$v3 = "EnableSmartScreen" ascii wide
+		$v4 = "FIREWALLDISABLENOTIFY" ascii wide nocase
+		$v5 = "UPDATESDISABLENOTIFY" nocase ascii wide
 
 	condition:
 		any of ($defender_*) or any of ($firewall_*) or any of ($MRT_*) or any of ($edge_*) or any of ($ie_*) or (1 of ($k*) and 1 of ($v*))
@@ -311,6 +319,11 @@ rule internet_shortcut_to_file
 		author = "iam-py-test"
 		date = "2022-11-21"
 		description = ".url files can point to a file by specifying file:/// and then the path as the URL"
+		// Yarahub
+		yarahub_uuid = "70c7014d-66cb-410e-a376-37c53807282e"
+		yarahub_license = "CC0 1.0"
+		yarahub_rule_matching_tlp = "TLP:WHITE"
+		yarahub_rule_sharing_tlp = "TLP:WHITE"
 	strings:
 		// detect if it is a .url file
 		$is_urlfile_1 = "{000214A0-0000-0000-C000-000000000046}" // CLSID
@@ -356,6 +369,36 @@ rule obf_wscript_shell
 		$esc_hide = "W!S!c!r!i!p!t!.!S!h!e!l!l"
 	condition:
 		any of them
+}
+
+rule reference_odd_file_path
+{
+	meta:
+		author = "iam-py-test"
+		description = "Detect references to odd file paths"
+	strings:
+		$p1 = "\\AppData\\Roaming\\svchost.exe" ascii wide
+		$p2 = "\\AppData\\Roaming\\sihost.exe" ascii wide
+		$p3 = "\\Startup\\Microsoft Corporation.exe" nocase ascii wide
+		$p4 = "\\ProgramData\\mzvgmp.bat" ascii wide
+		$p5 = "\\SVCUPDATER.EXE" nocase ascii wide
+		$p6 = "\\Windows\\Speech\\services.exe" ascii wide
+		$p7 = "\\Windows\\Runtime Service.exe" ascii wide
+		$p8 = "\\NETSVC4.EXE" nocase ascii wide
+		$p9 = "\\AppData\\Local\\Updates\\Run.vbs" ascii wide
+		$p10 = "\\Pictures\\SearchIndexer.exe" ascii wide
+		$p11 = "\\svchostf.exe" ascii wide
+		$p12 = "\\WindowsService.exe" ascii wide
+		$p13 = "\\Music\\lsass.exe" ascii wide
+		$p14 = "\\MicrosoftHost.exe" ascii wide
+		$p15 = /\\Fonts\\[a-zA-Z0-9]*\.exe/
+		$p16 = "\\H35c27gu.exe" ascii wide
+		$p17 = "\\qEdJzM2d.exe" ascii wide nocase
+		$p18 = "\\Y9QuxeJCZGmxxOGMOV2sEXu9.exe" ascii wide nocase
+		
+	condition:
+		any of them
+		
 }
 
 rule padded_with_zeros

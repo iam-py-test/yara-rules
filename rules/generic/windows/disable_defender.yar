@@ -2,7 +2,7 @@ rule Disable_Defender
 {
 	meta:
 		author = "iam-py-test"
-		description = "Detect files disabling or modifying Windows Defender, Windows Firewall, or Microsoft Smartscreen"
+		description = "Detect files possibly disabling or modifying Windows Defender, Windows Firewall, or Microsoft Smartscreen"
 		false_positives = "Files modifying Defender for legitimate purposes, files containing registry keys related to Defender (i.e. diagnostic tools)"
 		// Yarahub data
 		yarahub_uuid = "1fcd3702-cf5b-47b4-919d-6372c5412151"
@@ -76,12 +76,24 @@ rule Disable_Defender
 		$defender_task_4 = "schtasks /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Scheduled Scan\"" ascii wide
 		$defender_task_5 = "schtasks /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Verification\"" ascii wide nocase
 		$defender_wmic = "WMIC /Namespace:\\\\root\\Microsoft\\Windows\\Defender" ascii wide nocase
+		$defender_powershell_networkprotection = "Set-MpPreference -EnableNetworkProtection " ascii wide nocase
+		$defender_restore_default = "\\MpCmdRun.exe -RestoreDefaults" ascii wide
+		$defender_disable_controlled_folder_access = "Set-MpPreference -EnableControlledFolderAccess Disabled" ascii wide
+		$defender_wmi_defenderapi = "\\System\\CurrentControlSet\\Control\\WMI\\Autologger\\DefenderApiLogger" ascii wide
+		$defender_wmi_auditlogger = "\\System\\CurrentControlSet\\Control\\WMI\\Autologger\\DefenderAuditLogger" ascii wide
+		$defender_contextmenu_drive = "\\Drive\\shellex\\ContextMenuHandlers\\EPP" ascii wide
+		$defender_contextmenu_directory = "\\Directory\\shellex\\ContextMenuHandlers\\EPP" ascii wide
+		$defender_contextmenu_file = "\\*\\shellex\\ContextMenuHandlers\\EPP" ascii wide
+		$defender_msc = "C:\\Program Files\\Microsoft Security Client\\setup.exe" ascii wide
+		$defender_programdatawindef = "C:\\ProgramData\\Windows\\Windows Defender\\" ascii wide
+		$defender_programdatawindefadv = "C:\\ProgramData\\Windows\\Windows Defender Advanced Threat Protection\\" ascii wide
 		
 		// Windows firewall
 		$firewall_netsh_disable = "netsh advfirewall set allprofiles state off" ascii wide
 		$firewall_reg_key = "\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\" ascii wide
 		$firewall_sharedaccess_reg_key = "\\SYSTEM\\CurrentControlSet\\Services\\SharedAccess\\Parameters\\FirewallPolicy\\" ascii wide
 		$firewall_allow = "netsh firewall add allowedprogram" nocase ascii wide
+		$firewall_changelogsize = "netsh advfirewall set currentprofile logging maxfilesize" ascii wide nocase
 		
 		// Microsoft Windows Malicious Software Removal Tool
 		$MRT_reg_key = "\\SOFTWARE\\Policies\\Microsoft\\MRT" ascii wide
@@ -94,12 +106,25 @@ rule Disable_Defender
 		// Internet Explorer
 		$ie_phishing_filter = "\\SOFTWARE\\Microsoft\\Internet Explorer\\PhishingFilter" ascii wide
 		
-		// key, value pairs
+		// AMSI
+		$amsi_wscript_1 = "\\Software\\Microsoft\\Windows Script\\Settings\\AmsiEnable"
+		$amsi_wscript_2 = "\\\\Software\\\\Microsoft\\\\Windows Script\\\\Settings\\\\AmsiEnable"
+		
+		// key, value pairs - these may have false positives
 		$k1 = "\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" ascii wide
 		$k2 = "\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" ascii wide
+		$k3 = "\\SOFTWARE\\Policies\\Microsoft\\Windows\\System" ascii wide
+		$k4 = "\\SOFTWARE\\MICROSOFT\\SECURITY CENTER" nocase ascii wide
+		$k5 = "\\SYSTEM\\ControlSet001\\Services\\Sense" ascii wide
+		$k6 ="\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Attachments"
 		
 		$v1 = "HideSCAHealth" ascii wide
-		$v2 = "SecurityHealth" ascii
+		$v2 = "SecurityHealth" ascii wide
+		$v3 = "EnableSmartScreen" ascii wide
+		$v4 = "FIREWALLDISABLENOTIFY" ascii wide nocase
+		$v5 = "UPDATESDISABLENOTIFY" nocase ascii wide
+		$v6 = "Start" nocase ascii wide
+		$v7 = "ScanWithAntiVirus"
 
 	condition:
 		any of ($defender_*) or any of ($firewall_*) or any of ($MRT_*) or any of ($edge_*) or any of ($ie_*) or (1 of ($k*) and 1 of ($v*))
